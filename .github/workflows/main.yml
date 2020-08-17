@@ -45,5 +45,5 @@ jobs:
         prerelease: true
         draft: false
         files: |
-          nasc*.AppImage*
+          NaSC*.AppImage*
         repo_token: ${{ secrets.GITHUB_TOKEN }}
