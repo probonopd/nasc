@@ -16,8 +16,33 @@ jobs:
     - name: Install Dependencies
       run: |
         apt update
-        apt install -y gobject-introspection libgee-0.8-dev libwebkit2gtk-4.0-dev libgtksourceview-3.0-dev libcln-dev libgranite-dev libcurl4-openssl-dev libmpfr-dev intltool meson valac
+        apt install -y gobject-introspection libgee-0.8-dev libwebkit2gtk-4.0-dev libgtksourceview-3.0-dev libcln-dev libgranite-dev libcurl4-openssl-dev libmpfr-dev intltool meson valac wget librsvg2-bin appstream elementary-theme elementary-icon-theme libgtk-3-common
     - name: Build
       run: |
         meson build --prefix=/usr
         ninja -C build
+        ninja -C build install
+    - name: AppImage
+      run: |
+        APPDIR=$(readlink -f appdir) # Why is this needed?
+        DESTDIR="$APPDIR" ninja -C build install
+        wget -c -q https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
+        chmod +x appimagetool-*.AppImage
+        # mkdir -p "$APPDIR"/usr/share/icons/hicolor/128x128/apps/
+        find "$APPDIR"
+        ./appimagetool-*.AppImage -s deploy "$APPDIR"/usr/share/applications/*.desktop --appimage-extract-and-run # Bundle EVERYTHING
+        sed -i -e 's|/usr||g' "$APPDIR"/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # FIXME in https://github.com/probonopd/go-appimage
+        mkdir -p "$APPDIR"/usr/share/icons ; cp -r /usr/share/icons/elementary "$APPDIR"/usr/share/icons/ # https://github.com/akiraux/Akira/issues/3#issuecomment-674544807 and https://github.com/probonopd/go-appimage/blob/c522796229a3669afdf8b4870b045b597332c5a2/src/appimagetool/appdirtool.go#L715-L722
+        mkdir -p "$APPDIR"/usr/share/themes ; cp -r /usr/share/themes/elementary "$APPDIR"/usr/share/themes/ # https://github.com/akiraux/Akira/issues/3#issuecomment-674544807
+        rm -rf "$APPDIR"/usr/share/themes/Default ; sed -i -e 's|Default|elementary|g' "$APPDIR"/AppRun # Use the elementary theme rather than the Gtk Default theme
+        ./appimagetool-*.AppImage "$APPDIR" --appimage-extract-and-run # turn AppDir into AppImage
+    - name: Release AppImage
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        title: AppImage
+        automatic_release_tag: continuous
+        prerelease: true
+        draft: false
+        files: |
+          nasc*.AppImage*
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
