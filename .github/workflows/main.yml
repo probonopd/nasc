@@ -30,6 +30,7 @@ jobs:
         chmod +x appimagetool-*.AppImage
         mkdir -p "$APPDIR"/usr/share/icons/hicolor/256x256/apps/
         rsvg-convert -w 256 -h 256 icons/128/com.github.parnold-x.nasc.svg > "$APPDIR"/usr/share/icons/hicolor/256x256/apps/com.github.parnold-x.nasc.png
+        mkdir -p "$APPDIR"/usr/share/glib-2.0/schemas/ ; cp /usr/share/glib-2.0/schemas/org.gtk.Settings.*.xml "$APPDIR"/usr/share/glib-2.0/schemas/
         find "$APPDIR"
         ./appimagetool-*.AppImage -s deploy "$APPDIR"/usr/share/applications/*.desktop --appimage-extract-and-run # Bundle EVERYTHING
         sed -i -e 's|/usr||g' "$APPDIR"/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders.cache # FIXME in https://github.com/probonopd/go-appimage
